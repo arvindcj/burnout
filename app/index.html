@@ -1,6 +1,11 @@
+<!--
+  https://www.w3schools.com/js/js_conventions.asp
+-->
+
 <html>
 <head>
    <meta name='viewport' content = 'width = device-width, initial-scale = 1.0, user-scalable = no'/>
+   <link href="https://fonts.googleapis.com/css?family=Lobster" rel="stylesheet">
    <script type="text/javascript" src="jquery-2.1.3.min.js"></script>
    <script type="text/javascript" src="introtoapps.min.js"></script>
 
@@ -8,26 +13,122 @@
    /* Namespacing
       Global Game Settings
    */
-      var Burnout = {};
+      var paused = false,
+          debug = true;
+          Burnout = {};
 
-      Burnout.roadSpeed = 100; //milliseconds
+      function logger() {
+      }
 
+      Burnout.logger = function(one) {
+        if (debug == true) {
+          console.info(one);
+        }
+      };
+
+      Burnout.road = (function() {
+        /* road Object state
+           1. ROAD_SPEED: at which the road is animated.
+              (Larger values indicate lower speed.)
+        */
+        var ROAD_IMAGE = '.road02',
+            ROAD_SPEED = 100;
+
+        function animateRoad(){
+          $(ROAD_IMAGE).hide(ROAD_SPEED)
+                       .show(ROAD_SPEED);
+        }
+
+        return {
+          animateRoad: animateRoad
+        }
+      }());
+
+      Burnout.menu = (function(){
+        //location.reload();
+      }());
+
+      Burnout.player = (function() {
+
+        function drawPlayerCar() {
+          //$('.playerCar1').append('<div>');
+          //console.info("sdfd");
+          //var newXPosition = $(".playerCar1").position().left + 100;
+          //$(".playerCar1").css("left:", newXPosition + "px");
+          Burnout.logger("Logger is working!");
+          $('body').append("<div class='playerCar1'></div>");
+          $(".playerCar1").moveTo(0);
+          $(".playerCar1").css("bottom", "0px");
+        };
+
+        return {
+          drawPlayerCar: drawPlayerCar
+        }
+      }());
+
+      /* How do i build a game loop?
+         level duration
+      */
+      function startGameLoop(){
+        var paused = false;
+        Burnout.road.animateRoad();
+        Burnout.player.drawPlayerCar();
+        if (!paused) {
+          setTimeout(startGameLoop, 200);
+        }
+      }
+
+      /* Entry point of the Application
+         It is used to:
+         1. startGameLoop
+         2. addEventHandlers
+      */
       $(document).ready(function() {
         startGameLoop();
+
+        $("body").onTap(function(e) {
+          //pause(true);
+	         console.log(e.clientX);
+         });
+
+         $("#menu").onTap(function(e) {
+           console.log("sddf");
+         });
       });
 
-      function startGameLoop(){
-        animateRoad();
-        setTimeout(startGameLoop,200);
-      }
-
-      function animateRoad(){
-        $('.road02').hide(Burnout.roadSpeed);
-        $('.road02').show(Burnout.roadSpeed);
-      }
    </script>
 
    <style type="text/css">
+   /*
+   */
+    .playerCar1 {
+      background-image: url('./images/red_car.svg');
+      background-repeat: no-repeat;
+      background-size: 30% 30%;
+      width: 100%;
+      height: 100%;
+      z-index: 5;
+    }
+
+    #sid {
+      font-family: 'Lobster', cursive;
+      font-size: 30;
+      color: white;
+      top: 10px;
+      left: 350px;
+      position: fixed;
+      z-index: 5;
+    }
+
+    #menu {
+      font-family: 'Lobster', cursive;
+      font-size: 30;
+      color: white;
+      top: 10px;
+      left: 50px;
+      position: fixed;
+      z-index: 5;
+    }
 
     .road01 {
       background-image: url('./images/tunnel_road.jpg');
@@ -35,6 +136,7 @@
       width: 512px;
       height: 512px;
       position: fixed;
+      z-index: -10;
     }
 
     .road02 {
@@ -43,11 +145,14 @@
       width: 512px;
       height: 512px;
       position: fixed;
+      z-index: -10;
       }
    </style>
 </head>
 <body>
   <div class="road01"></div>
   <div class="road02"></div>
+  <div id="menu">menu</div>
+  <div id="sid">SID: 1234</div>
 </body>
 </html>
