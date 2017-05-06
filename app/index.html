@@ -17,14 +17,11 @@
           debug = true;
           Burnout = {};
 
-      function logger() {
-      }
-
-      Burnout.logger = function(one) {
+      function logger(log) {
         if (debug == true) {
-          console.info(one);
+          console.info(log);
         }
-      };
+      }
 
       Burnout.road = (function() {
         /* road Object state
@@ -50,21 +47,42 @@
 
       Burnout.player = (function() {
 
-        function drawPlayerCar() {
+        var playerCar01 = '.playerCar01',
+            playerPositionX = 0,
+            playerPositionY = 0;
+
+        function initializePlayer() {
+            $('body').append('<div class="player01"></div>');
+        };
+
+        function updatePlayer(event) {
           //$('.playerCar1').append('<div>');
           //console.info("sdfd");
           //var newXPosition = $(".playerCar1").position().left + 100;
           //$(".playerCar1").css("left:", newXPosition + "px");
-          Burnout.logger("Logger is working!");
-          $('body').append("<div class='playerCar1'></div>");
-          $(".playerCar1").moveTo(0);
-          $(".playerCar1").css("bottom", "0px");
+          logger("Logger is working!");
+          //var newXPosition = $(playerCar01).position();
+          //$(".player01").moveTo(50);
+          //logger(newXPosition);
+          //$(playerCar01).css("left", newXPosition + "px"); // we add "px" to say our value is in pixels.
+
+          //$(".playerCar1").moveTo(0);
+          //$(".playerCar1").css("bottom", "0px");
+          //$(".playerCar1").css("z-index", 5);
         };
 
         return {
-          drawPlayerCar: drawPlayerCar
+          initializePlayer: initializePlayer,
+          updatePlayer: updatePlayer
         }
       }());
+
+      /* initialize game
+         1. initialize Players Car
+      */
+      function initialize(){
+        Burnout.player.initializePlayer();
+      }
 
       /* How do i build a game loop?
          level duration
@@ -72,7 +90,7 @@
       function startGameLoop(){
         var paused = false;
         Burnout.road.animateRoad();
-        Burnout.player.drawPlayerCar();
+
         if (!paused) {
           setTimeout(startGameLoop, 200);
         }
@@ -84,11 +102,12 @@
          2. addEventHandlers
       */
       $(document).ready(function() {
+        initialize();
         startGameLoop();
+          //$(".player01").moveTo(50);
 
-        $("body").onTap(function(e) {
-          //pause(true);
-	         console.log(e.clientX);
+        $("body").onTap(function(event) {
+          Burnout.player.updatePlayer(event);
          });
 
          $("#menu").onTap(function(e) {
@@ -101,7 +120,7 @@
    <style type="text/css">
    /*
    */
-    .playerCar1 {
+    .player01 {
       background-image: url('./images/red_car.svg');
       background-repeat: no-repeat;
       background-size: 30% 30%;
