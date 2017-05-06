@@ -13,11 +13,13 @@
    /* Namespacing
       Global Game Settings
    */
-      var paused = false,
+      var windowWidth = $(window).width(),
+          windowHeight = $(window).height(),
+          paused = false,
           debug = true;
           Burnout = {};
 
-      function logger(log) {
+      function log(log) {
         if (debug == true) {
           console.info(log);
         }
@@ -28,15 +30,23 @@
            1. ROAD_SPEED: at which the road is animated.
               (Larger values indicate lower speed.)
         */
-        var ROAD_IMAGE = '.road02',
+        var roadWidth = windowWidth,
+            ROAD_IMAGE01 = '.road01',
+            ROAD_IMAGE02 = '.road02',
             ROAD_SPEED = 100;
 
+        function initializeRoad() {
+          $(ROAD_IMAGE01).css("transform", "scale("+scaleFactor($(ROAD_IMAGE01).width())+")");
+          $(ROAD_IMAGE02).css("transform", "scale("+scaleFactor($(ROAD_IMAGE01).width())+")");
+        }
+
         function animateRoad(){
-          $(ROAD_IMAGE).hide(ROAD_SPEED)
-                       .show(ROAD_SPEED);
+          $(ROAD_IMAGE02).hide(ROAD_SPEED)
+                         .show(ROAD_SPEED);
         }
 
         return {
+          initializeRoad: initializeRoad,
           animateRoad: animateRoad
         }
       }());
@@ -47,12 +57,19 @@
 
       Burnout.player = (function() {
 
-        var playerCar01 = '.playerCar01',
+        var playerCar01 = '.player01',
+            playerScale = 0.15,
             playerPositionX = 0,
             playerPositionY = 0;
 
         function initializePlayer() {
-            $('body').append('<div class="player01"></div>');
+            //$('body').append('<div class="player01"></div>');
+            log("scale Factor : " + scaleFactor());
+            log($('.road01').height());
+            log(imageScaleFactor($(playerCar01).width()));
+            $(playerCar01).css("transform",
+                               "scale("+(imageScaleFactor($(playerCar01).width()) *
+                                playerScale)+")");
         };
 
         function updatePlayer(event) {
@@ -60,14 +77,17 @@
           //console.info("sdfd");
           //var newXPosition = $(".playerCar1").position().left + 100;
           //$(".playerCar1").css("left:", newXPosition + "px");
-          logger("Logger is working!");
+          log("log is working!");
           //var newXPosition = $(playerCar01).position();
-          //$(".player01").moveTo(50);
-          //logger(newXPosition);
+          //$(".player01").moveTo(90);
+          //$(".player01").speed(0.5);
+          //log(newXPosition);
           //$(playerCar01).css("left", newXPosition + "px"); // we add "px" to say our value is in pixels.
-
+          //$(playerCar01).css("transform", "scale("+scaleFactor()+")");
           //$(".playerCar1").moveTo(0);
-          //$(".playerCar1").css("bottom", "0px");
+          //$(".playerCar1").css("top", "100px");
+          //d = $(".playerCar1").css("z-index");
+          //log(d);
           //$(".playerCar1").css("z-index", 5);
         };
 
@@ -80,17 +100,31 @@
       /* initialize game
          1. initialize Players Car
       */
-      function initialize(){
+      function initialize() {
+        Burnout.road.initializeRoad();
         Burnout.player.initializePlayer();
+      }
+
+      function scaleFactor() {
+        if (windowWidth > windowHeight) {
+          // landscape calculation
+          return windowHeight / 512;
+          return
+        } else {
+          // portrait calculation
+          return windowWidth / 512;
+        }
+      }
+
+      function imageScaleFactor(width) {
+        return (512 / width * scaleFactor());
       }
 
       /* How do i build a game loop?
          level duration
       */
-      function startGameLoop(){
-        var paused = false;
+      function startGameLoop() {
         Burnout.road.animateRoad();
-
         if (!paused) {
           setTimeout(startGameLoop, 200);
         }
@@ -111,22 +145,43 @@
          });
 
          $("#menu").onTap(function(e) {
-           console.log("sddf");
+            var modal = document.getElementById('myModal');
+            modal.style.display = "block";
+            paused = true;
+            log("pause game :" + paused);
+         });
+
+         $(".close").onTap(function(){
+           var span = document.getElementsByClassName("close")[0];
+           var modal = document.getElementById('myModal');
+           modal.style.display = "none";
+           paused = false;
+           startGameLoop();
+         });
+
+         $(window).resize(function(event) {
+           windowWidth = $(window).width();
+           windowHeight = $(window).height();
          });
       });
 
    </script>
 
    <style type="text/css">
-   /*
-   */
+
     .player01 {
-      background-image: url('./images/red_car.svg');
-      background-repeat: no-repeat;
-      background-size: 30% 30%;
-      width: 100%;
-      height: 100%;
+      background-image: url('./images/cars_mini.png');
+      background-size: auto;
+      transform-origin: 0px 0px;
+      width: 203px;
+      height: 338px;
+      position: absolute;
       z-index: 5;
+    }
+
+    body {
+      position: relative;
+      background-color: black;
     }
 
     #sid {
@@ -150,11 +205,12 @@
     }
 
     .road01 {
-      background-image: url('./images/tunnel_road.jpg');
+      background-image: url('./images/tunnel_road01.png');
       background-size: auto;
       width: 512px;
       height: 512px;
-      position: fixed;
+      position: absolute;
+      transform-origin: 0px 0px;
       z-index: -10;
     }
 
@@ -163,9 +219,93 @@
       background-size: auto;
       width: 512px;
       height: 512px;
-      position: fixed;
+      position: absolute;
+      transform-origin: 0px 0px;
       z-index: -10;
       }
+
+      /* The Modal (background) */
+    .modal {
+        display: none; /* Hidden by default */
+        position: fixed; /* Stay in place */
+        z-index: 1; /* Sit on top */
+        left: 0;
+        top: 0;
+        width: 100%; /* Full width */
+        height: 100%; /* Full height */
+        overflow: auto; /* Enable scroll if needed */
+        background-color: rgb(0,0,0); /* Fallback color */
+        background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        z-index: 10;
+    }
+
+    /* Modal Content/Box */
+    .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto; /* 15% from the top and centered */
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%; /* Could be more or less, depending on screen size */
+        z-index: 10;
+    }
+
+    /* The Close Button */
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .modal-header {
+    padding: 2px 16px;
+    background-color: #5cb85c;
+    color: white;
+}
+
+/* Modal Body */
+.modal-body {padding: 2px 16px;}
+
+/* Modal Footer */
+.modal-footer {
+    padding: 2px 16px;
+    background-color: #5cb85c;
+    color: white;
+}
+
+/* Modal Content */
+.modal-content {
+    position: relative;
+    background-color: #fefefe;
+    margin: auto;
+    padding: 0;
+    border: 1px solid #888;
+    width: 80%;
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+    -webkit-animation-name: animatetop;
+    -webkit-animation-duration: 0.4s;
+    animation-name: animatetop;
+    animation-duration: 0.4s
+}
+
+/* Add Animation */
+@-webkit-keyframes animatetop {
+    from {top: -300px; opacity: 0}
+    to {top: 0; opacity: 1}
+}
+
+@keyframes animatetop {
+    from {top: -300px; opacity: 0}
+    to {top: 0; opacity: 1}
+}
+
    </style>
 </head>
 <body>
@@ -173,5 +313,18 @@
   <div class="road02"></div>
   <div id="menu">menu</div>
   <div id="sid">SID: 1234</div>
-</body>
+  <div class="player01"></div>
+
+  <div id="myModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="close">&times;</span>
+        <h2>Modal Header</h2>
+      </div>
+      <div class="modal-body">
+        <p>Some text in the Modal Body</p>
+        <p>Some other text...</p>
+      </div>
+    </div>
+  </body>
 </html>
