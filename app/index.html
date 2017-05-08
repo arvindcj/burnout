@@ -48,7 +48,10 @@
            1. ROAD_SPEED: at which the road is animated.
               (Larger values indicate lower speed.)
         */
-        var lanes = 4,
+        var roadAnimateCount = 0,
+            CROSSING = '.crossing'
+            crossingScaleFactor = 1,
+            lanes = 4,
             ROAD_IMAGE01 = '.road01',
             ROAD_IMAGE02 = '.road02',
             ROAD_SPEED = 100;
@@ -60,9 +63,22 @@
                               "scale("+scaleFactor($(ROAD_IMAGE01).width())+")");
           }
 
+        // Road Animation
         function animateRoad(){
           $(ROAD_IMAGE02).hide(ROAD_SPEED)
                          .show(ROAD_SPEED);
+          roadAnimateCount++;
+
+          // Draw the Zebra-Crossing every 25 Road Animation counts.
+          if (roadAnimateCount == 25 ){
+              $(CROSSING).hide();
+              $("body").append("<div class='crossing'></div>");
+              $(CROSSING).css("transform",
+                              "scale("+(imageScaleFactor($(CROSSING).width()) *
+                              crossingScaleFactor) +")");
+             $(CROSSING).moveTo(180);
+             roadAnimateCount = 0;
+          }
         }
 
         function roadWidth() {
@@ -86,15 +102,26 @@
             playerScale = 0.15,
             playerTopPosition = 375,
             playerLeftPosition = 0,
-            playerLanePosition = 1;
+            playerLanePosition = 0;
 
         function getPlayerPosition() {
             return playerLeftPosition;
         }
 
-        function setPlayerPosition(position) {
-            $(playerCar01).css("left", position + "px");
-            return playerLeftPosition = position;
+        function setPlayerPosition(newLanePosition) {
+
+          log(Math.abs(newLanePosition - playerLanePosition) );
+            if ((newLanePosition >= 1) &&
+                (newLanePosition <= 4) &&
+                (Math.abs(newLanePosition - playerLanePosition) == 1)) {
+                  log("inside set");
+                  log("newLanePosition : " + newLanePosition)
+                  var position = Burnout.road.laneWidth() * (0.25  + (newLanePosition-1));
+                  log("position : " + position);
+                  $(playerCar01).css("left", position + "px");
+                  playerLanePosition = newLanePosition;
+                  playerLeftPosition = position;
+            }
         }
 
         function initializePlayer() {
@@ -110,17 +137,16 @@
               //                  (Burnout.road.laneWidth() * 0.25) + "px");
             //setPlayerPosition($(playerCar01).css("left")
               //                .substring(0, $(playerCar01).css("left").length - 2));
-            setPlayerPosition(Burnout.road.laneWidth() * 0.25);
+            //setPlayerPosition(Burnout.road.laneWidth() * 0.25);
+            setPlayerPosition(1);
         };
 
         function updatePlayer(event) {
           if (event.clientX > getPlayerPosition()) {
-            setPlayerPosition(Burnout.road.laneWidth() +
-                              playerLeftPosition);
+            setPlayerPosition(playerLanePosition + 1);
           }
           else if (event.clientX < getPlayerPosition()) {
-            setPlayerPosition(playerLeftPosition -
-                              Burnout.road.laneWidth());
+            setPlayerPosition(playerLanePosition - 1);
           }
         };
 
@@ -140,6 +166,7 @@
         Burnout.player.initializePlayer();
       }
 
+      // Scales the road to the display size.
       function scaleFactor() {
         if (windowWidth > windowHeight) {
           // landscape calculation
@@ -151,6 +178,7 @@
         }
       }
 
+      //scales all images to the road size.
       function imageScaleFactor(width) {
         return (512 / width * scaleFactor());
       }
@@ -159,8 +187,8 @@
          level duration
       */
       function startGameLoop() {
-        Burnout.road.animateRoad();
         if (!paused) {
+          Burnout.road.animateRoad();
           setTimeout(startGameLoop, 200);
         }
       }
@@ -176,7 +204,8 @@
           //$(".player01").moveTo(50);
 
         $("body").onTap(function(event) {
-          Burnout.player.updatePlayer(event);
+          if (!paused)
+            Burnout.player.updatePlayer(event);
          });
 
          $("#menu").onTap(function(e) {
@@ -218,17 +247,18 @@
       position: relative;
       background-color: black;
     }
-/*
-    #sid {
-      font-family: 'Lobster', cursive;
-      font-size: 30;
-      color: white;
-      top: 10px;
-      left: 300px;
-      position: fixed;
-      z-index: 5;
+
+    .crossing {
+      background-image: url('./images/crossing.png');
+      background-repeat: no-repeat;
+      background-size: auto;
+      transform-origin: 0px 0px;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      z-index: -10;
     }
-*/
+
     #menu {
       font-family: 'Lobster', cursive;
       font-size: 30;
