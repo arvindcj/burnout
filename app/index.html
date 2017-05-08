@@ -3,8 +3,8 @@
 -->
 
 <html>
-<head>
-   <meta name='viewport' content = 'width = device-width, initial-scale = 1.0, user-scalable = no'/>
+  <head>
+   <meta name='viewport' content='width = device-width, initial-scale = 1.0, user-scalable = no'/>
    <link href="https://fonts.googleapis.com/css?family=Lobster" rel="stylesheet">
    <script type="text/javascript" src="jquery-2.1.3.min.js"></script>
    <script type="text/javascript" src="introtoapps.min.js"></script>
@@ -25,70 +25,103 @@
         }
       }
 
+      Burnout.level = (function(){
+        var level = 1,
+            levelDuration = 100;
+
+        function getLevel(){
+          return level;
+        };
+
+        function setLevel(level){
+          this.level = level;
+        };
+
+        return {
+          getLevel: getLevel,
+          setLevel: setLevel
+        }
+      }());
+
       Burnout.road = (function() {
         /* road Object state
            1. ROAD_SPEED: at which the road is animated.
               (Larger values indicate lower speed.)
         */
-        var roadWidth = windowWidth,
+        var lanes = 4,
             ROAD_IMAGE01 = '.road01',
             ROAD_IMAGE02 = '.road02',
             ROAD_SPEED = 100;
 
         function initializeRoad() {
-          $(ROAD_IMAGE01).css("transform", "scale("+scaleFactor($(ROAD_IMAGE01).width())+")");
-          $(ROAD_IMAGE02).css("transform", "scale("+scaleFactor($(ROAD_IMAGE01).width())+")");
-        }
+          $(ROAD_IMAGE01).css("transform",
+                              "scale("+scaleFactor($(ROAD_IMAGE01).width())+")");
+          $(ROAD_IMAGE02).css("transform",
+                              "scale("+scaleFactor($(ROAD_IMAGE01).width())+")");
+          }
 
         function animateRoad(){
           $(ROAD_IMAGE02).hide(ROAD_SPEED)
                          .show(ROAD_SPEED);
         }
 
+        function roadWidth() {
+          return $(ROAD_IMAGE01).width()  * scaleFactor();
+        }
+
+        function laneWidth() {
+          return (roadWidth() / lanes);
+        }
+
         return {
           initializeRoad: initializeRoad,
-          animateRoad: animateRoad
+          animateRoad: animateRoad,
+          laneWidth: laneWidth
         }
-      }());
-
-      Burnout.menu = (function(){
-        //location.reload();
       }());
 
       Burnout.player = (function() {
 
         var playerCar01 = '.player01',
             playerScale = 0.15,
-            playerPositionX = 0,
-            playerPositionY = 0;
+            playerTopPosition = 375,
+            playerLeftPosition = 0,
+            playerLanePosition = 1;
+
+        function getPlayerPosition() {
+            return playerLeftPosition;
+        }
+
+        function setPlayerPosition(position) {
+            $(playerCar01).css("left", position + "px");
+            return playerLeftPosition = position;
+        }
 
         function initializePlayer() {
-            //$('body').append('<div class="player01"></div>');
             log("scale Factor : " + scaleFactor());
-            log($('.road01').height());
+            log("road height :" + $('.road01').height());
             log(imageScaleFactor($(playerCar01).width()));
             $(playerCar01).css("transform",
                                "scale("+(imageScaleFactor($(playerCar01).width()) *
                                 playerScale)+")");
+            $(playerCar01).css("top",
+                               playerTopPosition * scaleFactor() + "px");
+            //$(playerCar01).css("left",
+              //                  (Burnout.road.laneWidth() * 0.25) + "px");
+            //setPlayerPosition($(playerCar01).css("left")
+              //                .substring(0, $(playerCar01).css("left").length - 2));
+            setPlayerPosition(Burnout.road.laneWidth() * 0.25);
         };
 
         function updatePlayer(event) {
-          //$('.playerCar1').append('<div>');
-          //console.info("sdfd");
-          //var newXPosition = $(".playerCar1").position().left + 100;
-          //$(".playerCar1").css("left:", newXPosition + "px");
-          log("log is working!");
-          //var newXPosition = $(playerCar01).position();
-          //$(".player01").moveTo(90);
-          //$(".player01").speed(0.5);
-          //log(newXPosition);
-          //$(playerCar01).css("left", newXPosition + "px"); // we add "px" to say our value is in pixels.
-          //$(playerCar01).css("transform", "scale("+scaleFactor()+")");
-          //$(".playerCar1").moveTo(0);
-          //$(".playerCar1").css("top", "100px");
-          //d = $(".playerCar1").css("z-index");
-          //log(d);
-          //$(".playerCar1").css("z-index", 5);
+          if (event.clientX > getPlayerPosition()) {
+            setPlayerPosition(Burnout.road.laneWidth() +
+                              playerLeftPosition);
+          }
+          else if (event.clientX < getPlayerPosition()) {
+            setPlayerPosition(playerLeftPosition -
+                              Burnout.road.laneWidth());
+          }
         };
 
         return {
@@ -101,6 +134,8 @@
          1. initialize Players Car
       */
       function initialize() {
+        var d = new Date();
+        log(d.toLocaleTimeString());
         Burnout.road.initializeRoad();
         Burnout.player.initializePlayer();
       }
@@ -183,17 +218,17 @@
       position: relative;
       background-color: black;
     }
-
+/*
     #sid {
       font-family: 'Lobster', cursive;
       font-size: 30;
       color: white;
       top: 10px;
-      left: 350px;
+      left: 300px;
       position: fixed;
       z-index: 5;
     }
-
+*/
     #menu {
       font-family: 'Lobster', cursive;
       font-size: 30;
@@ -222,10 +257,11 @@
       position: absolute;
       transform-origin: 0px 0px;
       z-index: -10;
-      }
+    }
 
       /* The Modal (background) */
     .modal {
+        font-family: 'Lobster', cursive;
         display: none; /* Hidden by default */
         position: fixed; /* Stay in place */
         z-index: 1; /* Sit on top */
@@ -241,6 +277,7 @@
 
     /* Modal Content/Box */
     .modal-content {
+        font-family: 'Lobster', cursive;
         background-color: #fefefe;
         margin: 15% auto; /* 15% from the top and centered */
         padding: 20px;
@@ -268,62 +305,74 @@
     padding: 2px 16px;
     background-color: #5cb85c;
     color: white;
-}
+    }
 
-/* Modal Body */
-.modal-body {padding: 2px 16px;}
+    /* Modal Body */
+    .modal-body {padding: 2px 16px;}
 
-/* Modal Footer */
-.modal-footer {
-    padding: 2px 16px;
-    background-color: #5cb85c;
-    color: white;
-}
+    /* Modal Footer */
+    .modal-footer {
+      padding: 2px 16px;
+      background-color: #5cb85c;
+      color: white;
+    }
 
-/* Modal Content */
-.modal-content {
-    position: relative;
-    background-color: #fefefe;
-    margin: auto;
-    padding: 0;
-    border: 1px solid #888;
-    width: 80%;
-    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
-    -webkit-animation-name: animatetop;
-    -webkit-animation-duration: 0.4s;
-    animation-name: animatetop;
-    animation-duration: 0.4s
-}
+    /* Modal Content */
+    .modal-content {
+      position: relative;
+      background-color: #fefefe;
+      margin: auto;
+      padding: 0;
+      border: 1px solid #888;
+      width: 80%;
+      box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+      -webkit-animation-name: animatetop;
+      -webkit-animation-duration: 0.4s;
+      animation-name: animatetop;
+      animation-duration: 0.4s
+    }
 
-/* Add Animation */
-@-webkit-keyframes animatetop {
-    from {top: -300px; opacity: 0}
-    to {top: 0; opacity: 1}
-}
+    #help {
+      background-color: lightblue;
+    }
 
-@keyframes animatetop {
-    from {top: -300px; opacity: 0}
-    to {top: 0; opacity: 1}
-}
+    /* Add Animation */
+    @-webkit-keyframes animatetop {
+      from {top: -300px; opacity: 0}
+      to {top: 0; opacity: 1}
+    }
+
+    @keyframes animatetop {
+      from {top: -300px; opacity: 0}
+      to {top: 0; opacity: 1}
+    }
 
    </style>
-</head>
-<body>
+ </head>
+ <body>
   <div class="road01"></div>
   <div class="road02"></div>
   <div id="menu">menu</div>
-  <div id="sid">SID: 1234</div>
   <div class="player01"></div>
 
   <div id="myModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
         <span class="close">&times;</span>
-        <h2>Modal Header</h2>
+        <h2>Game Menu - Paused</h2>
       </div>
       <div class="modal-body">
-        <p>Some text in the Modal Body</p>
-        <p>Some other text...</p>
+        <p>Arvind Cuthambakam SID: 1234</p>
+        <p style="color:red;" onclick="location.reload()">Reset Game</p>
+        <div style="background-color: lightblue;" id="credits">
+          <p>Credits</p>
+          game_music.wav
+        </div>
+        <div id="help">
+          <p>Help</p>
+          <p>You win! when you clear the track without crashing</p>
+          <p>Tap to avoid colliding with other cars</p>
+        </div>
       </div>
     </div>
   </body>
