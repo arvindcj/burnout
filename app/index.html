@@ -10,58 +10,286 @@
    <script type="text/javascript" src="introtoapps.min.js"></script>
 
    <script type="text/javascript">
-   /* Namespacing
-      Global Game Settings
-   */
+      /* Namespacing
+        Global Game Settings
+        1. windowWidth: physical width of device display.
+        2. windowHeight: physical Height of device display.
+        3. paused: Game paused/running.
+        4. debug: debug flag for console logging.
+      */
       var windowWidth = $(window).width(),
           windowHeight = $(window).height(),
           paused = false,
           debug = true;
           Burnout = {};
 
+      // Game Logging
       function log(log) {
         if (debug == true) {
           console.info(log);
         }
       }
 
-      Burnout.level = (function(){
+      /* Game Level Object
+         1. level: current level.
+         2. initialize: initialize level.
+         3. levelCompletion: check if the level is complete.
+         4. newLevel: Level UP.
+         5. drawLevel: draw the level information.
+      */
+      Burnout.level = (function() {
         var level = 1,
-            levelDuration = 100;
+            levelString = 'level',
+            LEVEL_CLASS = '.level',
+            levelStartTime = 0,
+            levelScale = 0.2,
+            gameoverTopPosition = 150,
+            gameoverLeftPosition = 100,
+            levelLeftPosition = 250,
+            levelDuration = 10000; // Level Game-play duration.
 
-        function getLevel(){
-          return level;
+        /* Initialize level=1
+           Set Start Time of the level.
+        */
+        function initialize() {
+          level = 1;
+          levelStartTime = new Date().getTime();
+          drawLevel();
         };
 
-        function setLevel(level){
-          this.level = level;
+        /* Check if the level is completed.
+           Reset level Timer if level is completed.
+        */
+        function levelCompletion() {
+          var levelCurrentTime = new Date().getTime();
+          if ((levelCurrentTime - levelStartTime) >= levelDuration) {
+            levelStartTime = levelCurrentTime;
+            return true;
+          } else {
+            return false;
+          }
         };
+
+        // Increment to the new Level.
+        function newLevel() {
+          level += 1;
+          drawLevel();
+        };
+
+        // Draw Level Indicator on screen.
+        function drawLevel() {
+          // Remove previous level infomation.
+          $(LEVEL_CLASS).remove();
+          // Draw current level infomation on screen.
+          $("body").append("<div class='level'>" + levelString + " : " + level +"</div>");
+          $(LEVEL_CLASS).css("transform",
+                             "scale("+ (imageScaleFactor($(LEVEL_CLASS).width()) *
+                             levelScale) +")");
+          $(LEVEL_CLASS).css("left", levelLeftPosition * scaleFactor() + "px");
+        };
+
+        function pauseGame(option) {
+          if (option) {
+            paused = true;
+            $('.ghost').speed(null);
+            $('.enemy01').speed(null);
+            $('.enemy02').speed(null);
+            $('.enemy03').speed(null);
+          } else {
+            paused = false;
+            $('.ghost').speed(0.2);
+            $('.enemy01').speed(0.2);
+            $('.enemy02').speed(0.2);
+            $('.enemy03').speed(9.2);
+          }
+        }
+
+        function endGame() {
+          pauseGame(true);
+          $("body").append("<div class='gameover'>Game Over</div>");
+          $(".gameover").css("transform",
+                             "scale("+ (imageScaleFactor($(LEVEL_CLASS).width()) *
+                             levelScale) +")");
+          $(".gameover").css("top", gameoverTopPosition * scaleFactor() + "px");
+          $(".gameover").css("left", gameoverLeftPosition * scaleFactor() + "px");
+        }
 
         return {
-          getLevel: getLevel,
-          setLevel: setLevel
+          initialize: initialize,
+          newLevel: newLevel,
+          levelCompletion: levelCompletion,
+          pauseGame: pauseGame,
+          endGame: endGame
         }
       }());
 
+      /* Game Enemies Object
+         1. Ghost: state information for ghost.
+         2. drawGhost: draw gost on screen.
+      */
+      Burnout.enemy = (function() {
+
+        var enemy01Duration = 10000,
+            enemy02Duration = 10000,
+            enemy03Duration = 100,
+            enemy01Scale = 0.19,
+            enemy02Scale = 0.1,
+            enemy03Scale = 0.2,
+            enemy01StartTime = 0,
+            enemy02StartTime = 0,
+            enemy03StartTime = 0,
+            ghostDuration = 10000,
+            ghostScale = 0.2,
+            ghostStartTime = 0;
+
+        // Draw Ghost.
+        function drawGhost() {
+          ghostCurrentTime = new Date().getTime();
+          // Check if the Ghost Time has expired.
+          if((ghostCurrentTime - ghostStartTime) > ghostDuration) {
+            // Reset Ghost Timer.
+            ghostStartTime = ghostCurrentTime;
+
+            // Set the Lane for Ghost.
+            var ghostLane = Math.floor(Math.random() * 4) + 1;
+
+            $("body").append("<div class='ghost'></div>");
+            $('.ghost').css("transform",
+                             "scale("+(imageScaleFactor($('.ghost').width()) *
+                              ghostScale)+")");
+             $('.ghost').css("top", + "0px");
+             $('.ghost').css("left", (ghostLane - 1) * Burnout.road.laneWidth() + "px");
+             $('.ghost').moveTo(180);
+             $('.ghost').speed(0.2);
+          }
+        };
+
+        function selectEnemy() {
+          /* Randomize enemy generation
+             level = 1 (generates => enemyOne)
+             level = 2 (generates => enemyOne or enemyTwo)
+             level = 3 (generates => enemyOne or enemyTwo or enemyThree)
+          */
+          var enemy = Math.floor( Math.random() *
+                                  Burnout.level.level) + 1;
+          enemy = 2;
+          switch(enemy){
+            case 1: enemyOne();
+            break;
+            case 2: enemyTwo();
+            break;
+            case 3: enemyThree();
+            break;
+          }
+        };
+
+        // Draw Enemy One.
+        function enemyOne() {
+          var enemy01CurrentTime = new Date().getTime();
+
+          // Check if the Enemy-One Time has expired.
+          if((enemy01CurrentTime - enemy01StartTime) > enemy01Duration) {
+
+            // Reset Enemy-One Timer.
+            enemy01StartTime = enemy01CurrentTime;
+
+            // Enemy-One Lane selection.
+            var enemyOneLane = Math.floor(Math.random() * 4) + 1;
+
+            $("body").append("<div class='enemy01'></div>");
+            $('.enemy01').attr("lane" , enemyOneLane);
+            $('.enemy01').css("transform",
+                              "scale("+(imageScaleFactor($('.enemy01').width()) *
+                              enemy01Scale)+")");
+            $('.level').css("top", + "0px");
+            enemy01Position = (Burnout.road.laneWidth() *
+                              (enemyOneLane - 1)) + 15;
+            log("enemy01Position : " + enemy01Position);
+            $('.enemy01').css("left", enemy01Position + "px");
+            $('.enemy01').css("width" , Burnout.road.laneWidth());
+            $('.enemy01').moveTo(180);
+            $('.enemy01').speed(0.2);
+            log("ENEMY 01 Width : " + $('.enemy01').width());
+            log("enemy01Position : " + enemy01Position);
+            log("Burnout.road.laneWidth() : " + Burnout.road.laneWidth())
+          }
+        }
+
+        function enemyTwo() {
+          var enemy02CurrentTime = new Date().getTime();
+
+          // Check if the Enemy-One Time has expired.
+          if((enemy02CurrentTime - enemy02StartTime) > enemy02Duration) {
+
+            // Reset Enemy-One Timer.
+            enemy02StartTime = enemy02CurrentTime;
+
+            // Enemy-One Lane selection.
+            var enemyTwoLane = Math.floor(Math.random() * 4) + 1;
+
+            $("body").append("<div class='enemy02'></div>");
+            $('.enemy02').attr("lane" , enemyTwoLane);
+            $('.enemy02').css("transform",
+                              "scale("+(imageScaleFactor($('.enemy02').width()) *
+                              enemy02Scale)+")");
+            $('.level').css("top", + "0px");
+
+            /*$('.enemy02').css("height", 40);
+            */enemy02Position = ( Burnout.road.laneWidth() *
+                              (enemyTwoLane - 1)) + 20;
+            $('.enemy02').css("left", enemy02Position + "px");
+            $('.enemy02').moveTo(180);
+            $('.enemy02').speed(0.2);
+            $('.enemy02').css("background-color", "yellow");
+            log("ENEMY 02 top : " + $('.enemy02').position().top);
+            log("ENEMY 02 hight : " + $('.enemy02').height());
+            log("enemy02Position : " + enemy02Position);
+          }
+        }
+
+        function enemyThree() {
+
+        }
+
+        return {
+          drawGhost: drawGhost,
+          selectEnemy: selectEnemy
+        }
+      }());
+
+      /* road Object state
+         1. ROAD_SPEED: at which the road is animated.
+            (Larger values indicate lower speed.)
+      */
       Burnout.road = (function() {
-        /* road Object state
-           1. ROAD_SPEED: at which the road is animated.
-              (Larger values indicate lower speed.)
-        */
+
         var roadAnimateCount = 0,
             CROSSING = '.crossing'
+            MASK = '.mask',
             crossingScaleFactor = 1,
             lanes = 4,
             ROAD_IMAGE01 = '.road01',
             ROAD_IMAGE02 = '.road02',
             ROAD_SPEED = 100;
 
-        function initializeRoad() {
+        // Initialize Road animation.
+        function initialize() {
           $(ROAD_IMAGE01).css("transform",
                               "scale("+scaleFactor($(ROAD_IMAGE01).width())+")");
           $(ROAD_IMAGE02).css("transform",
                               "scale("+scaleFactor($(ROAD_IMAGE01).width())+")");
-          }
+                              drawMask();
+        };
+
+        function drawMask(){
+          var maskHeight = windowHeight - ($(ROAD_IMAGE01).height() * scaleFactor()),
+              maskWidth = windowWidth,
+              maskTop = $(ROAD_IMAGE01).height() * scaleFactor();
+          $("body").append("<div class='mask'></div>");
+          $(MASK).css("width", maskWidth);
+          $(MASK).css("height", maskHeight);
+          $(MASK).css("top", maskTop);
+        };
 
         // Road Animation
         function animateRoad(){
@@ -70,27 +298,27 @@
           roadAnimateCount++;
 
           // Draw the Zebra-Crossing every 25 Road Animation counts.
-          if (roadAnimateCount == 25 ){
+          if (roadAnimateCount == 15 ){
               $(CROSSING).hide();
               $("body").append("<div class='crossing'></div>");
               $(CROSSING).css("transform",
                               "scale("+(imageScaleFactor($(CROSSING).width()) *
                               crossingScaleFactor) +")");
-             $(CROSSING).moveTo(180);
-             roadAnimateCount = 0;
+               $(CROSSING).moveTo(180);
+               roadAnimateCount = 0;
           }
-        }
+        };
 
         function roadWidth() {
-          return $(ROAD_IMAGE01).width()  * scaleFactor();
-        }
+          return $(ROAD_IMAGE01).width() * scaleFactor();
+        };
 
         function laneWidth() {
           return (roadWidth() / lanes);
-        }
+        };
 
         return {
-          initializeRoad: initializeRoad,
+          initialize: initialize,
           animateRoad: animateRoad,
           laneWidth: laneWidth
         }
@@ -109,32 +337,34 @@
         }
 
         function setPlayerPosition(newLanePosition) {
-
-          log(Math.abs(newLanePosition - playerLanePosition) );
             if ((newLanePosition >= 1) &&
                 (newLanePosition <= 4) &&
                 (Math.abs(newLanePosition - playerLanePosition) == 1)) {
-                  log("inside set");
-                  log("newLanePosition : " + newLanePosition)
+
                   var position = Burnout.road.laneWidth() * (0.25  + (newLanePosition-1));
                   log("position : " + position);
-                  $(playerCar01).css("left", position + "px");
+                  $(playerCar01).moveTo( position ,playerTopPosition * scaleFactor());
+                  $(playerCar01).speed(0.5);
+                  $(playerCar01).attr("lane", newLanePosition);
+                  //$(playerCar01).css("left", position + "px");
                   playerLanePosition = newLanePosition;
                   playerLeftPosition = position;
             }
         }
 
-        function initializePlayer() {
-            log("scale Factor : " + scaleFactor());
-            log("road height :" + $('.road01').height());
-            log(imageScaleFactor($(playerCar01).width()));
+        function initialize() {
             $(playerCar01).css("transform",
                                "scale("+(imageScaleFactor($(playerCar01).width()) *
                                 playerScale)+")");
             $(playerCar01).css("top",
                                playerTopPosition * scaleFactor() + "px");
-            //$(playerCar01).css("left",
-              //                  (Burnout.road.laneWidth() * 0.25) + "px");
+            $(playerCar01).css("left",
+                              (Burnout.road.laneWidth() * 0.25) + "px");
+            $(playerCar01).attr("lane", 1);
+            log("player width : " + $(playerCar01).width());
+            log("Lanewidth : " + Burnout.road.laneWidth());
+            log("player TOP : " + $(playerCar01).position().top);
+            $('.player01').css("background-color", "yellow");
             //setPlayerPosition($(playerCar01).css("left")
               //                .substring(0, $(playerCar01).css("left").length - 2));
             //setPlayerPosition(Burnout.road.laneWidth() * 0.25);
@@ -150,9 +380,14 @@
           }
         };
 
+        function getPLayerLanePosition() {
+          return playerLanePosition;
+        };
+
         return {
-          initializePlayer: initializePlayer,
-          updatePlayer: updatePlayer
+          initialize: initialize,
+          updatePlayer: updatePlayer,
+          getPLayerLanePosition: getPLayerLanePosition
         }
       }());
 
@@ -160,10 +395,9 @@
          1. initialize Players Car
       */
       function initialize() {
-        var d = new Date();
-        log(d.toLocaleTimeString());
-        Burnout.road.initializeRoad();
-        Burnout.player.initializePlayer();
+        Burnout.level.initialize();
+        Burnout.road.initialize();
+        Burnout.player.initialize();
       }
 
       // Scales the road to the display size.
@@ -171,7 +405,6 @@
         if (windowWidth > windowHeight) {
           // landscape calculation
           return windowHeight / 512;
-          return
         } else {
           // portrait calculation
           return windowWidth / 512;
@@ -180,18 +413,34 @@
 
       //scales all images to the road size.
       function imageScaleFactor(width) {
-        return (512 / width * scaleFactor());
+        return ((512 / width) * scaleFactor());
       }
 
-      /* How do i build a game loop?
-         level duration
+      /* Game Loop
+         1. animate road
+         2. Check if Level was completed
+         3. Draw ghost
+         4. Draw Enemy
       */
       function startGameLoop() {
         if (!paused) {
+          log("PAUSED");
           Burnout.road.animateRoad();
-          setTimeout(startGameLoop, 200);
+           if (Burnout.level.levelCompletion()) {
+             Burnout.level.newLevel();
+           }
+          Burnout.enemy.drawGhost();
+          Burnout.enemy.selectEnemy();
+          setTimeout(startGameLoop, 500); //200
         }
       }
+
+      // delete?
+      // function detectCollision(object) {
+      //    //f ( ($('.player').css("lane")) == ($(object).css("lane")))
+      //           log("player position : " + $('.player01').attr("lane"));
+      //           log("Object position : " + $(object).attr("lane"));
+      // };
 
       /* Entry point of the Application
          It is used to:
@@ -199,43 +448,115 @@
          2. addEventHandlers
       */
       $(document).ready(function() {
+        // Initialize Game.
         initialize();
-        startGameLoop();
-          //$(".player01").moveTo(50);
 
+        // Player Position (Event Listener).
         $("body").onTap(function(event) {
           if (!paused)
             Burnout.player.updatePlayer(event);
          });
 
+         // Menu (Event Listener).
          $("#menu").onTap(function(e) {
             var modal = document.getElementById('myModal');
             modal.style.display = "block";
-            paused = true;
-            log("pause game :" + paused);
+            Burnout.level.pauseGame(true);
          });
 
+         // Close Menu (Event Listener).
          $(".close").onTap(function(){
            var span = document.getElementsByClassName("close")[0];
            var modal = document.getElementById('myModal');
            modal.style.display = "none";
-           paused = false;
+           Burnout.level.pauseGame(false);
            startGameLoop();
          });
 
+         // Collision Detection (Event Listener).
+         $('.player01').onCollision(function (enemy) {
+           log("Burnout.player.getPLayerLanePosition : " + Burnout.player.getPLayerLanePosition());
+            if (enemy.attr("lane") == Burnout.player.getPLayerLanePosition()) {
+              log(enemy.position().top);
+              log(enemy.height());
+              Burnout.level.endGame();
+            }
+         });
+
+         // Set new Window size on Resize.
          $(window).resize(function(event) {
            windowWidth = $(window).width();
            windowHeight = $(window).height();
          });
+
+         // Start Game Loop.
+         startGameLoop();
       });
 
    </script>
 
    <style type="text/css">
 
+    /* Blockade */
+    .enemy01 {
+      background-image: url('./images/enemy1.png');
+      background-size: 100px 20px;
+      transform-origin: 0px 0px;
+      width: 100px;
+      height: 20px;
+      position: absolute;
+      z-index: 5;
+    }
+
+    /* Car 01 */
+    .enemy02 {
+      background-image: url('./images/enemy2.png');
+    /*  background-size: 112px 256px;
+    */  background-repeat: no-repeat;
+     background-size: auto;
+      transform-origin: 0px 0px;
+      width: 112px;
+      height: 256px;
+      position: absolute;
+      z-index: 5;
+    }
+
+    /* Car 02 */
+    .enemy03 {
+      background-image: url('./images/enemy3.png');
+      background-size: auto;
+      transform-origin: 0px 0px;
+      width: 100px;
+      height: 100px;
+      position: absolute;
+      z-index: 5;
+    }
+
+    .gameover {
+      font-family: 'Lobster', cursive;
+      transform-origin: 0px 0px;
+      font-size: 20;
+      color: white;
+      top: 0px;
+      left: 0px;
+      position: absolute;
+      z-index: -10;
+    }
+
+    .level {
+      font-family: 'Lobster', cursive;
+      transform-origin: 0px 0px;
+      font-size: 10;
+      color: white;
+      top: 10px;
+      left: 0px;
+      position: absolute;
+      z-index: 10;
+    }
+
     .player01 {
       background-image: url('./images/cars_mini.png');
-      background-size: auto;
+      background-size: 203px 338px;
       transform-origin: 0px 0px;
       width: 203px;
       height: 338px;
@@ -251,12 +572,23 @@
     .crossing {
       background-image: url('./images/crossing.png');
       background-repeat: no-repeat;
-      background-size: auto;
-      transform-origin: 0px 0px;
-      width: 100%;
-      height: 100%;
+      /*background-size: auto;
+      */transform-origin: 0px 0px;
+      width: 1024px;
+      height: 256px;
       position: absolute;
       z-index: -10;
+    }
+
+    .ghost {
+      background-image: url('./images/ghost.png');
+      background-repeat: no-repeat;
+      background-size: auto;
+      transform-origin: 0px 0px;
+      width: 100px;
+      height: 100px;
+      position: absolute;
+      z-index: 9;
     }
 
     #menu {
@@ -265,8 +597,8 @@
       color: white;
       top: 10px;
       left: 50px;
-      position: fixed;
-      z-index: 5;
+      position: absolute;
+      z-index: 10;
     }
 
     .road01 {
@@ -289,17 +621,13 @@
       z-index: -10;
     }
 
-      /* The Modal (background) */
     .modal {
         font-family: 'Lobster', cursive;
-        display: none; /* Hidden by default */
-        position: fixed; /* Stay in place */
-        z-index: 1; /* Sit on top */
-        left: 0;
-        top: 0;
+        display: none;
+        position: fixed;
         width: 100%; /* Full width */
         height: 100%; /* Full height */
-        overflow: auto; /* Enable scroll if needed */
+        overflow: scroll; /* Enable scroll if needed */
         background-color: rgb(0,0,0); /* Fallback color */
         background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
         z-index: 10;
@@ -324,27 +652,17 @@
         font-weight: bold;
     }
 
-    .close:hover,
-    .close:focus {
-        color: black;
-        text-decoration: none;
-        cursor: pointer;
-    }
-
     .modal-header {
-    padding: 2px 16px;
-    background-color: #5cb85c;
-    color: white;
-    }
-
-    /* Modal Body */
-    .modal-body {padding: 2px 16px;}
-
-    /* Modal Footer */
-    .modal-footer {
       padding: 2px 16px;
       background-color: #5cb85c;
       color: white;
+      z-index: 10;
+    }
+
+    /* Modal Body */
+    .modal-body {
+      padding: 2px 16px;
+      z-index: 10;
     }
 
     /* Modal Content */
@@ -355,26 +673,18 @@
       padding: 0;
       border: 1px solid #888;
       width: 80%;
-      box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
-      -webkit-animation-name: animatetop;
-      -webkit-animation-duration: 0.4s;
-      animation-name: animatetop;
-      animation-duration: 0.4s
+/*      box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+*/      z-index: 10;
     }
 
     #help {
       background-color: lightblue;
     }
 
-    /* Add Animation */
-    @-webkit-keyframes animatetop {
-      from {top: -300px; opacity: 0}
-      to {top: 0; opacity: 1}
-    }
-
-    @keyframes animatetop {
-      from {top: -300px; opacity: 0}
-      to {top: 0; opacity: 1}
+    .mask {
+      position: absolute;
+      background-color: black;
+      z-index: 100;
     }
 
    </style>
@@ -395,13 +705,11 @@
         <p>Arvind Cuthambakam SID: 1234</p>
         <p style="color:red;" onclick="location.reload()">Reset Game</p>
         <div style="background-color: lightblue;" id="credits">
-          <p>Credits</p>
-          game_music.wav
+          <p>Credits - Found in License.txt</p>
         </div>
         <div id="help">
-          <p>Help</p>
-          <p>You win! when you clear the track without crashing</p>
-          <p>Tap to avoid colliding with other cars</p>
+          <p>Help - You win! when you clear the track without crashing.
+          Tap to avoid colliding with other cars.</p>
         </div>
       </div>
     </div>
